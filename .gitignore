@@ -1,32 +1,104 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
+# ---- secrets -------------------------------------------------------------
+# The OC Transpo subscription key. .env.example is committed. .env never is.
 #
-# Binaries for programs and plugins
+# The program looks in three places, in this order: the environment, ./.env,
+# and ~/.config/otransit/.env. The third is the one to use, because both
+# implementations of this program read it, and one key on disk is better than
+# two.
+.env
+.env.*
+!.env.example
+
+# ---- Go build output -----------------------------------------------------
+# The binary, anchored to the repository root. Without the leading slash this
+# would also ignore a package directory of the same name, such as
+# cmd/otransit/.
+/otransit
+/otransit-go
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
 
-# Test binary, built with `go test -c`
+# Compiled test binaries, from `go test -c`.
 *.test
 
-# Code coverage profiles and other test artifacts
+# Modules come from the proxy. Nothing is vendored.
+/vendor/
+
+# Workspace files are per-machine.
+go.work
+go.work.sum
+
+# ---- test and profiling output -------------------------------------------
+# Careful: *.out is the Go convention for a coverage profile, and it is wide.
+# A file named go.out or rust.out disappears without a word. Write the
+# conformance comparison outside this repository.
 *.out
 coverage.*
 *.coverprofile
 profile.cov
+*.prof
+*.pprof
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Fuzzing corpora found by `go test -fuzz`. Check one in by hand when it
+# reproduces a real defect. Leave the rest here.
+testdata/fuzz/
 
-# Go workspace file
-go.work
-go.work.sum
+# ---- feed data and caches ------------------------------------------------
+# The GTFS download and anything unpacked from it. Fetched by the update
+# command, never committed.
+*.zip
+/gtfs/
+/gtfs-extract/
+/data/
+/samples/
+*.db
+*.sqlite
+*.sqlite3
 
-# env file
-.env
+# ---- editors and OS ------------------------------------------------------
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# ---- the conformance directory -------------------------------------------
+# A symlink to the reference checkout, so `make diff` needs no absolute path.
+# The link is per-machine, so it stays out of the repository.
+#
+# Remove this rule on the day conformance/ becomes a real submodule at the same
+# path. Git ignores a submodule that an ignore rule covers, and it says nothing
+# while it does.
+/conformance
+
+# ---- assistant and local config ------------------------------------------
+.claude/settings.local.json
+
+# Skills cloned from their own repositories. Each one carries a nested .git,
+# which git would record as an embedded repository. They update with
+# `git pull`. To vendor one instead, drop this rule and delete its .git first.
+/.claude/skills/
+
+# ---- documentation is tracked, with one exception ------------------------
+# There is deliberately no *.md rule here. Ignore a document by name when it is
+# genuinely local, and never ignore the category.
+#
+# The other implementation ignored *.md and named the exceptions. CLAUDE.md was
+# never added to that list, so the file holding every trap in the codebase sat
+# untracked for the life of the project and reached no clone.
+#
+# CLAUDE.md is local here by choice, and this is the lesson from that: what it
+# held about the program did not go with it. The traps are in TRAPS.md, the four
+# rules that keep a replay honest are in PORTING.md, and the mutation campaign's
+# vocabulary is in TESTING.md. Nothing a clone needs lives only in the file
+# below.
+/CLAUDE.md

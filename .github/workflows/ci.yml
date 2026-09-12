@@ -1,0 +1,72 @@
+# The gate runs this repository's one `make check` and nothing else.
+#
+# The Makefile is the gate, so a developer and this job run the same checks. A job
+# that restated the individual steps here would be a second gate to keep in step
+# with the first, and the two would drift.
+#
+# mise installs the toolchain and the tools that mise.toml pins.
+#
+# GOTOOLCHAIN=local is deliberate: this job must test the Go version this
+# repository names, rather than silently downloading a newer one because go.mod
+# asked for it.
+#
+# The first build this job ever ran went red, and the job was right: a pty test
+# named Darwin's ioctl for reading a termios, which does not exist here. The gate
+# now ends its static analysis with a pass for linux, so that class of failure
+# shows up on the machine somebody is writing on.
+#
+# What this job cannot see: the fixture comparison and the pty tests. conformance/
+# is a gitignored symlink into the other implementation's checkout, and the pty
+# tests browse the cache slice behind it, so they skip here. PORTING.md records
+# the two open items behind that.
+
+name: gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # The version floor, in the third of the three places that hold it. The others
+  # are the `go` directive in go.mod and the `go` entry in mise.toml. The first
+  # step below fails when they disagree.
+  GO_VERSION: "1.27.1"
+  GOTOOLCHAIN: local
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: The floor is one number in three places
+        run: |
+          mod=$(awk '$1 == "go" { print $2; exit }' go.mod)
+          mise=$(awk -F'"' '/^go[[:space:]]*=/ { print $2; exit }' mise.toml)
+
+          echo "go.mod=$mod"
+          echo "mise.toml=$mise"
+          echo "workflow=$GO_VERSION"
+
+          if [ "$mod" != "$GO_VERSION" ] || [ "$mise" != "$GO_VERSION" ]; then
+            echo 'these three must agree, and they must change together' >&2
+            echo 'GO.md, under "Language version", says why' >&2
+            exit 1
+          fi
+
+      - name: Install the pinned tools
+        uses: jdx/mise-action@v4
+
+      - name: The tools are the ones the pins name
+        run: |
+          # One line per tool: what mise.toml asks for, and what is active. It
+          # covers goimports too, which has no version flag of its own.
+          mise ls --current
+          go version
+          go env GOTOOLCHAIN
+          golangci-lint --version
+
+      - run: make check

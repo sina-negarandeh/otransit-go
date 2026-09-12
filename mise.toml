@@ -1,0 +1,22 @@
+# The toolchain this repository is built with.
+#
+# The number here, the `go` directive in go.mod, and the Go version in the CI
+# job are one number in three places. GO.md says why: a version floor must have
+# a check behind it. Change all three together, or change none of them.
+#
+#   mise install        get this toolchain
+#   mise ls             confirm what is active here
+
+[tools]
+go = "1.27.1"
+
+# The linter, pinned. It bundles staticcheck, so one version here fixes the
+# version of both. A floating linter turns a new release into a red build on a
+# day nobody touched the code.
+golangci-lint = "2.13.2"
+
+# goimports, pinned for the same reason. It formats what gofmt formats and also
+# groups the imports, which is the one thing gofmt has no opinion about and the
+# linters do not check. Its version is x/tools', so a change here is a change of
+# what counts as a group.
+"go:golang.org/x/tools/cmd/goimports" = "0.50.0"

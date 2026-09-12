@@ -1,0 +1,39 @@
+# The wider lint selection, recorded in one file and applied to every package.
+#
+# GO.md is the authority on what belongs here. It says a linter earns its place
+# by finding something, and not by existing. Keep this file short.
+#
+# The default set is errcheck, govet, ineffassign, staticcheck and unused.
+# Run `golangci-lint help linters` to print it for the pinned version.
+
+version: "2"
+
+linters:
+  enable:
+    # GO.md forbids discarding an error with `_` unless a comment says why it
+    # cannot matter. Nothing else in the gate enforces that, because `go vet`
+    # does not look for it. This linter ships in the default set today. Naming
+    # it here keeps it if a later release drops it from that set.
+    - errcheck
+
+    # GO.md bans the `unsafe` package and says the ban must be a check rather
+    # than a sentence in a document. This rule is that check.
+    - depguard
+
+  settings:
+    errcheck:
+      # GO.md forbids the `_` form specifically. errcheck ignores that form
+      # unless this is on, so without it the rule has no check behind it.
+      #
+      # errcheck already exempts a list of standard-library calls that cannot
+      # fail. A write to a `strings.Builder` is on that list, which is the case
+      # GO.md names. Any other safe discard takes `//nolint:errcheck // why`,
+      # and GO.md says the reason is not optional.
+      check-blank: true
+
+    depguard:
+      rules:
+        no-unsafe:
+          deny:
+            - pkg: unsafe
+              desc: GO.md bans it, and nothing this program does needs it
